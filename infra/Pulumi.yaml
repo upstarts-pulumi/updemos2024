@@ -4,8 +4,3 @@ runtime:
   options:
     toolchain: pip
     virtualenv: ./venv
-description: A minimal AWS Python Pulumi program
-config:
-  pulumi:tags:
-    value:
-      pulumi:template: aws-python

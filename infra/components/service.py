@@ -1,4 +1,3 @@
-
 import pulumi
 from pulumi import ResourceOptions, ComponentResource, Output
 from pulumi_kubernetes.apps.v1 import Deployment, DeploymentSpecArgs
@@ -13,22 +12,18 @@ from pulumi_kubernetes.core.v1 import (
     ServiceSpecArgs,
 )
 from pulumi_kubernetes.meta.v1 import LabelSelectorArgs, ObjectMetaArgs
-from typing import Sequence, TypedDict
+from typing import NotRequired, Optional, Sequence, TypedDict
 
 class ServiceDeploymentArgs(TypedDict):
-    name: str
-    '''
-    The name of the service
-    '''
     image: str
     '''
     The container image to deploy into the K8s deployments
     '''
-    resources: ResourceRequirementsArgs
+    resources: NotRequired[ResourceRequirementsArgs]
     '''
     The resource requirements for the container
     '''
-    replicas: int
+    replicas: NotRequired[int]
     '''
     The number of replicas to deploy
     '''
@@ -36,11 +31,11 @@ class ServiceDeploymentArgs(TypedDict):
     '''
     The ports to expose on the service
     '''
-    allocate_ip_address: bool
+    allocate_ip_address: NotRequired[bool]
     '''
     Whether to allocate an IP address for the service
     '''
-    is_minikube: bool    
+    is_minikube: NotRequired[bool]
     '''
     Whether the cluster is minikube
     '''
@@ -50,14 +45,14 @@ class ServiceDeployment(ComponentResource):
     service: Service
     ip_address: Output[str]
 
-    def __init__(self, name: str, args: ServiceDeploymentArgs = None, opts: ResourceOptions = None):
+    def __init__(self, name: str, args: ServiceDeploymentArgs, opts: Optional[ResourceOptions] = None):
         super().__init__('k8sx:component:ServiceDeployment', name, {}, opts)
 
         labels = {"app": name}
         container = ContainerArgs(
             name=name,
             image=args['image'],
-            resources=args['resources'] or ResourceRequirementsArgs(
+            resources=args['resources'] if 'resources' in args else ResourceRequirementsArgs(
                 requests={
                     "cpu": "100m",
                     "memory": "100Mi"
@@ -80,18 +75,18 @@ class ServiceDeployment(ComponentResource):
             name,
             metadata=ObjectMetaArgs(
                 name=name,
-                labels=self.deployment.metadata.apply(lambda m: m.labels),
+                labels=self.deployment.metadata.apply(lambda m: m.labels or {}),
             ),
             spec=ServiceSpecArgs(
                 ports=[ServicePortArgs(port=p, target_port=p) for p in args['ports']] if 'ports' in args else None,
-                selector=self.deployment.spec.apply(lambda s: s.template.metadata.labels),
-                type=("ClusterIP" if args['is_minikube'] else "LoadBalancer") if 'allocate_ip_address' in args else None,
+                selector=self.deployment.spec.apply(lambda s: s.template.metadata.labels or {}), #type: ignore
+                type=("ClusterIP" if 'is_minikube' in args else "LoadBalancer") if 'allocate_ip_address' in args else None,
             ),
             opts=pulumi.ResourceOptions(parent=self))
         if 'allocate_ip_address' in args:
             if 'is_minikube' in args:
-                self.ip_address = self.service.spec.apply(lambda s: s.cluster_ip)
+                self.ip_address = self.service.spec.apply(lambda s: s.cluster_ip or "")
             else:
-                ingress=self.service.status.apply(lambda s: s.load_balancer.ingress[0])
+                ingress=self.service.status.apply(lambda s: s.load_balancer.ingress[0]) #type: ignore
                 self.ip_address = ingress.apply(lambda i: i.ip or i.hostname or "")
         self.register_outputs({})
