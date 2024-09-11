@@ -1,4 +1,5 @@
 import pulumi
+from pulumi import ResourceOptions
 from pulumi_aws import s3
 from components.infra import Infra
 from components.service import ServiceDeployment   
@@ -15,9 +16,8 @@ service = ServiceDeployment(
     {
         'image': 'nginx:1.15.4',
         'ports': [80],
-        'replicas': 2,
     }, 
-    opts=pulumi.ResourceOptions(provider=infra.k8s_provider)
+    opts=ResourceOptions(provider=infra.k8s_provider)
 )
 
 # Export the name of the bucket
