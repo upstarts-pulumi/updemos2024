@@ -1,5 +1,5 @@
 import pulumi
-from pulumi import ResourceOptions
+from pulumi import ResourceOptions, Output
 from pulumi_aws import s3
 from components.infra import Infra
 from components.service import ServiceDeployment   
@@ -8,7 +8,7 @@ from components.service import ServiceDeployment
 infra = Infra('base-infra')
 
 # Create raw AWS data storage resources
-bucket = s3.Bucket('my-bucket')
+bucket = s3.Bucket('my-bucket', acl='private')
 
 # Deploy a Kubernetes service into the cluster
 service = ServiceDeployment(
@@ -16,9 +16,10 @@ service = ServiceDeployment(
     {
         'image': 'nginx:1.15.4',
         'ports': [80],
-    }, 
+        'allocate_ip_address': True,  
+    },
     opts=ResourceOptions(provider=infra.k8s_provider)
 )
 
-# Export the name of the bucket
-pulumi.export('url', service.service.status)
+# Export the url for our service
+pulumi.export('url', Output.format("http://{}", service.ip_address))

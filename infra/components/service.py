@@ -62,6 +62,11 @@ class ServiceDeployment(ComponentResource):
         )
         self.deployment = Deployment(
             name,
+            metadata=ObjectMetaArgs(
+                labels=labels,
+                # annotations={"pulumi.com/waitFor": "condition=Synced"},
+                # annotations={"pulumi.com/waitFor": "jsonpath={.status.phase}=Running"},
+            ),
             spec=DeploymentSpecArgs(
                 selector=LabelSelectorArgs(match_labels=labels),
                 replicas=args['replicas'] if 'replicas' in args else 1,
@@ -87,6 +92,6 @@ class ServiceDeployment(ComponentResource):
             if 'is_minikube' in args:
                 self.ip_address = self.service.spec.apply(lambda s: s.cluster_ip or "")
             else:
-                ingress=self.service.status.apply(lambda s: s.load_balancer.ingress[0]) #type: ignore
+                ingress=self.service.status["load_balancer"]["ingress"][0]
                 self.ip_address = ingress.apply(lambda i: i.ip or i.hostname or "")
         self.register_outputs({})
