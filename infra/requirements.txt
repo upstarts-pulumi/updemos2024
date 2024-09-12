@@ -4,3 +4,4 @@ pulumi-eks==2.7.9
 pulumi-awsx==2.14.0
 pulumi-kubernetes==4.17.1
 debugpy
+typing-extensions==4.12.2

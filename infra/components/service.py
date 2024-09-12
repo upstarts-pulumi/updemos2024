@@ -12,7 +12,8 @@ from pulumi_kubernetes.core.v1 import (
     ServiceSpecArgs,
 )
 from pulumi_kubernetes.meta.v1 import LabelSelectorArgs, ObjectMetaArgs
-from typing import NotRequired, Optional, Sequence, TypedDict
+from typing import Optional, Sequence, TypedDict
+from typing_extensions import NotRequired
 
 class ServiceDeploymentArgs(TypedDict):
     image: str
